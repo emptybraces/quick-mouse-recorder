@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29911.84
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "quick_mouse_recorder", "quick_mouse_recorder\quick_mouse_recorder.csproj", "{CC782776-F1B2-4CBA-ADB4-E13426FB5DED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CC782776-F1B2-4CBA-ADB4-E13426FB5DED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC782776-F1B2-4CBA-ADB4-E13426FB5DED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC782776-F1B2-4CBA-ADB4-E13426FB5DED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC782776-F1B2-4CBA-ADB4-E13426FB5DED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {42EDBE37-3D01-46B9-BB6E-2558D7B1F0F3}
+	EndGlobalSection
+EndGlobal
