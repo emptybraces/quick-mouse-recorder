@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Web.Script.Serialization;
-using System.Windows;
 
 namespace quick_mouse_recorder
 {
@@ -26,6 +24,17 @@ namespace quick_mouse_recorder
 		// members
 		public Dictionary<string, List<CommandChunk>> CommandList { get; set; } = new Dictionary<string, List<CommandChunk>>();
 		public float IntervalCapture { get; set; }
+		public bool EnableHotKey{ get; set; }
+
+		static Config _config;
+		public static Config Instance {
+			get {
+				if (_config == null) {
+					_config = ReadConfig();
+				}
+				return _config;
+			}
+		}
 
 		/// <summary>
 		/// 設定ファイルのフルパスを取得

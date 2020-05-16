@@ -13,7 +13,7 @@ namespace quick_mouse_recorder
 	{
 		public ObservableCollection<CommandChunk> ListCommand { get; } = new ObservableCollection<CommandChunk>();
 		public ObservableCollection<string> ListNames { get; } = new ObservableCollection<string>();
-		public Config Config { get; private set; }
+		//public Config Config { get; private set; }
 		public bool IsRecording { get; private set; }
 		public bool IsPlaying { get; private set; }
 		public bool CanablePlay => ListCommand.Any();
@@ -41,34 +41,38 @@ namespace quick_mouse_recorder
 		}
 		public event System.Action OnFinishCommand;
 		public ReactiveProperty<float> CaptureInterval { get; } = new ReactiveProperty<float>();
+		public ReactiveProperty<string> TryCount { get; } = new ReactiveProperty<string>("1");
+
+		public ReactiveProperty<VM_ContentHotKey> VM_ContentHotkey { get; } = new ReactiveProperty<VM_ContentHotKey>(new VM_ContentHotKey());
+		public bool EnableHotKey => VM_ContentHotkey.Value.EnableHotKey;
 
 		public MainViewModel()
 		{
-			LoadConfig();
 		}
 
-		void LoadConfig()
+		public void Init()
 		{
-			Config = Config.ReadConfig();
-			if (Config == null) {
-				cn.log("make new config");
-				Config = new Config();
-				return;
-			}
-			if (Config.CommandList.Any()) {
-				foreach (var i in Config.CommandList.Values.First())
+			//Config = Config.ReadConfig();
+			//if (Config == null) {
+			//	cn.log("make new config");
+			//	Config = new Config();
+			//	return;
+			//}
+			if (Config.Instance.CommandList.Any()) {
+				foreach (var i in Config.Instance.CommandList.Values.First())
 					ListCommand.Add(i);
-				foreach (var i in Config.CommandList.Keys)
+				foreach (var i in Config.Instance.CommandList.Keys)
 					ListNames.Add(i);
 				//listBoxEventName.SelectedIndex = 0;
 			}
+			VM_ContentHotkey.Value.Init();
 		}
 
 		public void SaveConfig()
 		{
-			Config.IntervalCapture = CaptureInterval.Value;
-			cn.log(Config.IntervalCapture);
-			Config.WriteConfig(Config);
+			Config.Instance.IntervalCapture = CaptureInterval.Value;
+			cn.log(Config.Instance.IntervalCapture);
+			Config.WriteConfig(Config.Instance);
 		}
 
 		public void ProcCommand()
@@ -84,31 +88,36 @@ namespace quick_mouse_recorder
 		public async Task StartCommand()
 		{
 			IsPlaying = true;
-			var prev_wait = 0;
 			//var oldx = 0;
 			//var oldy = 0;
-			for (int i1 = 0; i1 < ListCommand.Count; i1++) {
-				var cmd = ListCommand[i1];
-				if (!IsPlaying) {
-					cn.log("中断しました");
-					break;
+			int.TryParse(TryCount.Value, out int try_total);
+			try_total = try_total <= 0 ? 1 : try_total;
+			cn.log(try_total);
+			for (int try_count = 0; try_count < try_total; ++try_count) {
+				var prev_wait = 0;
+				for (int i1 = 0; i1 < ListCommand.Count; i1++) {
+					var cmd = ListCommand[i1];
+					if (!IsPlaying) {
+						cn.log("中断しました");
+						break;
+					}
+					await Task.Delay(cmd.Time - prev_wait);
+					prev_wait = cmd.Time;
+					switch (cmd.Id) {
+						case InterceptInput.Mouse.WM_MOUSEMOVE:
+							SetCursorPos(cmd.X, cmd.Y);
+							//await CmdMouseMove(oldx, oldy, i.Point.X, i.Point.Y);
+							break;
+						case InterceptInput.Mouse.WM_LBUTTONDOWN:
+							mouse_event(kLEFT_DOWN, cmd.X, cmd.Y, 0, 0);
+							break;
+						case InterceptInput.Mouse.WM_LBUTTONUP:
+							mouse_event(kLEFT_UP, cmd.X, cmd.Y, 0, 0);
+							break;
+					}
+					//_OnSelectedCommandListItem(i1);
+					SelectedIndexListCommand = i1;
 				}
-				await Task.Delay(cmd.Time - prev_wait);
-				prev_wait = cmd.Time;
-				switch (cmd.Id) {
-					case InterceptInput.Mouse.WM_MOUSEMOVE:
-						SetCursorPos(cmd.X, cmd.Y);
-						//await CmdMouseMove(oldx, oldy, i.Point.X, i.Point.Y);
-						break;
-					case InterceptInput.Mouse.WM_LBUTTONDOWN:
-						mouse_event(kLEFT_DOWN, cmd.X, cmd.Y, 0, 0);
-						break;
-					case InterceptInput.Mouse.WM_LBUTTONUP:
-						mouse_event(kLEFT_UP, cmd.X, cmd.Y, 0, 0);
-						break;
-				}
-				//_OnSelectedCommandListItem(i1);
-				SelectedIndexListCommand = i1;
 			}
 			StopCommand();
 		}
@@ -138,14 +147,14 @@ namespace quick_mouse_recorder
 			if (selIndex < 0 || ListNames.Count <= selIndex)
 				return;
 			IsRecording = false;
-			Config.CommandList[ListNames[selIndex]] = ListCommand.ToList();
+			Config.Instance.CommandList[ListNames[selIndex]] = ListCommand.ToList();
 			cn.log("録画終了");
 		}
 
 		public void RefreshCommandList(string eventName)
 		{
 			ListCommand.Clear();
-			if (Config.CommandList.TryGetValue(eventName, out var commands)) {
+			if (Config.Instance.CommandList.TryGetValue(eventName, out var commands)) {
 				foreach (var i in commands)
 					ListCommand.Add(i);
 			}
@@ -162,7 +171,7 @@ namespace quick_mouse_recorder
 				var name = "new_" + i;
 				if (!ListNames.Contains(name)) {
 					ListNames.Add(name);
-					Config.CommandList[name] = new List<CommandChunk>();
+					Config.Instance.CommandList[name] = new List<CommandChunk>();
 					return name;
 				}
 			}
@@ -172,7 +181,7 @@ namespace quick_mouse_recorder
 		public void RemoveEventName(string name)
 		{
 			ListNames.Remove(name);
-			Config.CommandList.Remove(name);
+			Config.Instance.CommandList.Remove(name);
 		}
 
 		public void RenameEventName(string oldName, string newName)
@@ -183,9 +192,9 @@ namespace quick_mouse_recorder
 					break;
 				}
 			}
-			var value = Config.CommandList[oldName];
-			Config.CommandList.Remove(oldName);
-			Config.CommandList[newName] = value;
+			var value = Config.Instance.CommandList[oldName];
+			Config.Instance.CommandList.Remove(oldName);
+			Config.Instance.CommandList[newName] = value;
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;

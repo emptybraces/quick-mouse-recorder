@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
@@ -20,6 +21,13 @@ namespace quick_mouse_recorder
 		public MainWindow()
 		{
 			InitializeComponent();
+		}
+
+
+		private void window_Loaded(object sender, RoutedEventArgs e)
+		{
+			MaxHeight =	this.Height;
+			MaxWidth =	this.Width;
 			_sbBlink = (Storyboard)FindResource("Blink");
 			_interceptInput = new InterceptInput();
 			_interceptInput.AddEvent(hookMouse);
@@ -31,11 +39,8 @@ namespace quick_mouse_recorder
 				_sbBlink.Stop(button_play);
 				button_play.Content = "開始";
 			};
-		}
-
-		private void Window_ContentRendered(object sender, EventArgs e)
-		{
-			slider_captureIval.Value = VM.Config.IntervalCapture;
+			VM.Init();
+			slider_captureIval.Value = Config.Instance.IntervalCapture;
 		}
 
 		private void Window_Closed(object sender, EventArgs e)
@@ -43,6 +48,18 @@ namespace quick_mouse_recorder
 			_interceptInput.Stop();
 			// 設定保存
 			VM.SaveConfig();
+		}
+
+		private void window_MouseEnter(object sender, MouseEventArgs e)
+		{
+			var context = (VM_ContentHotKey)xNameCheckBoxHotKey.DataContext;
+			context.OnMouseEnter(xNameCheckBoxHotKey);
+		}
+
+		private void window_MouseLeave(object sender, MouseEventArgs e)
+		{
+			var context = (VM_ContentHotKey)xNameCheckBoxHotKey.DataContext;
+			context.OnMouseLeave(xNameCheckBoxHotKey);
 		}
 
 		private void button_play_Click(object sender, RoutedEventArgs e)
@@ -105,6 +122,8 @@ namespace quick_mouse_recorder
 
 		void hookKey(uint keyId, InterceptInput.Key.HookData data)
 		{
+			if (!VM.EnableHotKey)
+				return;
 			if (keyId != InterceptInput.Key.WM_KEYDOWN)
 				return;
 			var wpfkey = KeyInterop.KeyFromVirtualKey((int)data.vkCode);
@@ -182,6 +201,21 @@ namespace quick_mouse_recorder
 			_sbBlink.Stop(button_play);
 			button_play.Content = "開始";
 			VM.StopCommand();
+		}
+
+		[DllImport("user32.dll")]
+		private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+		[DllImport("user32.dll")]
+		private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+		private const int GWL_STYLE = -16;
+		private const int WS_MAXIMIZEBOX = 0x10000;
+
+		private void Window_SourceInitialized(object sender, EventArgs e)
+		{
+			var hwnd = new System.Windows.Interop.WindowInteropHelper((Window)sender).Handle;
+			var value = GetWindowLong(hwnd, GWL_STYLE);
+			SetWindowLong(hwnd, GWL_STYLE, (int)(value & ~WS_MAXIMIZEBOX));
 		}
 	}
 }
