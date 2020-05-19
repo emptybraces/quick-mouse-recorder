@@ -24,15 +24,15 @@ namespace quick_mouse_recorder
 		}
 
 
-		private void window_Loaded(object sender, RoutedEventArgs e)
+		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			MaxHeight =	this.Height;
 			MaxWidth =	this.Width;
 			_sbBlink = (Storyboard)FindResource("Blink");
 			_interceptInput = new InterceptInput();
-			_interceptInput.AddEvent(hookMouse);
+			_interceptInput.AddEvent(HookMouse);
 			InterceptInput.IsPausedMouse = true;
-			_interceptInput.AddEvent(hookKey);
+			_interceptInput.AddEvent(HookKey);
 			//KeyboardHook.AddEvent(hookKeyboardTest);
 			//KeyboardHook.Start();
 			VM.OnFinishCommand += () => {
@@ -50,39 +50,39 @@ namespace quick_mouse_recorder
 			VM.SaveConfig();
 		}
 
-		private void window_MouseEnter(object sender, MouseEventArgs e)
+		private void Window_MouseEnter(object sender, MouseEventArgs e)
 		{
 			var context = (VM_ContentHotKey)xNameCheckBoxHotKey.DataContext;
 			context.OnMouseEnter(xNameCheckBoxHotKey);
 		}
 
-		private void window_MouseLeave(object sender, MouseEventArgs e)
+		private void Window_MouseLeave(object sender, MouseEventArgs e)
 		{
 			var context = (VM_ContentHotKey)xNameCheckBoxHotKey.DataContext;
 			context.OnMouseLeave(xNameCheckBoxHotKey);
 		}
 
-		private void button_play_Click(object sender, RoutedEventArgs e)
+		private void Button_play_Click(object sender, RoutedEventArgs e)
 		{
 			SwitchCommand();
 		}
-		private void button_rec_Click(object sender, RoutedEventArgs e)
+		private void Button_rec_Click(object sender, RoutedEventArgs e)
 		{
 			SwitchRecording();
 		}
 
-		private void listboxCommandNameAdd_Context(object sender, RoutedEventArgs e)
+		private void ListboxCommandNameAdd_Context(object sender, RoutedEventArgs e)
 		{
 			var new_name = VM.AddNewCommandName();
 			if (new_name != null)
 				listBoxCommandName.SelectedItem = new_name;
 		}
-		private void listboxCommandNameDelete_Context(object sender, RoutedEventArgs e)
+		private void ListboxCommandNameDelete_Context(object sender, RoutedEventArgs e)
 		{
 			if (listBoxCommandName.SelectedIndex == -1) return;
 			VM.RemoveEventName(listBoxCommandName.SelectedItem.ToString());
 		}
-		private void listboxCommandNameRename_Context(object sender, RoutedEventArgs e)
+		private void ListboxCommandNameRename_Context(object sender, RoutedEventArgs e)
 		{
 			if (listBoxCommandName.SelectedIndex == -1) return;
 			var dialogue = new DialogueRename();
@@ -95,12 +95,12 @@ namespace quick_mouse_recorder
 			VM.RenameEventName(old_name, new_name);
 		}
 
-		private void listViewCommandItemDelete_Context(object sener, RoutedEventArgs e)
+		private void ListViewCommandItemDelete_Context(object sener, RoutedEventArgs e)
 		{
 			cn.log(listViewCommand.SelectedIndex);
 		}
 
-		void hookMouse(uint mouseId, InterceptInput.Mouse.HookData data)
+		void HookMouse(uint mouseId, InterceptInput.Mouse.HookData data)
 		{
 			// 移動のみ一定時間のインターバルを持たせる
 			if (mouseId == InterceptInput.Mouse.WM_MOUSEMOVE && _timer.ElapsedMilliseconds < slider_captureIval.Value * 1000)
@@ -120,7 +120,7 @@ namespace quick_mouse_recorder
 			listViewCommand.ScrollIntoView(listViewCommand.Items[last_index]);
 		}
 
-		void hookKey(uint keyId, InterceptInput.Key.HookData data)
+		void HookKey(uint keyId, InterceptInput.Key.HookData data)
 		{
 			if (!VM.EnableHotKey)
 				return;

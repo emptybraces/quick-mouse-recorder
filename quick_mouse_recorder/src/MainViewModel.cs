@@ -16,7 +16,6 @@ namespace quick_mouse_recorder
 		//public Config Config { get; private set; }
 		public bool IsRecording { get; private set; }
 		public bool IsPlaying { get; private set; }
-		public bool CanablePlay => ListCommand.Any();
 		int _selectedIndexListName;
 		public int SelectedIndexListName {
 			get {
@@ -46,6 +45,21 @@ namespace quick_mouse_recorder
 		public ReactiveProperty<VM_ContentHotKey> VM_ContentHotkey { get; } = new ReactiveProperty<VM_ContentHotKey>(new VM_ContentHotKey());
 		public bool EnableHotKey => VM_ContentHotkey.Value.EnableHotKey;
 
+		public ReactiveProperty<bool> EnableFileList { get; } = new ReactiveProperty<bool>(true);
+		public ReactiveProperty<bool> EnableCommandList { get; } = new ReactiveProperty<bool>(true);
+		public ReactiveProperty<bool> EnableSettings { get; } = new ReactiveProperty<bool>(true);
+		public ReactiveProperty<bool> EnableRecButton { get; } = new ReactiveProperty<bool>(true);
+		public bool EnablePlayButton {
+			get {
+				return _enablePlayButton && ListCommand.Any();
+			}
+			set {
+				_enablePlayButton = value;
+				NotifyPropertyChanged();
+			}
+		}
+		bool _enablePlayButton = true;
+
 		public MainViewModel()
 		{
 		}
@@ -66,6 +80,7 @@ namespace quick_mouse_recorder
 				//listBoxEventName.SelectedIndex = 0;
 			}
 			VM_ContentHotkey.Value.Init();
+			NotifyPropertyChanged(nameof(EnablePlayButton));
 		}
 
 		public void SaveConfig()
@@ -87,6 +102,10 @@ namespace quick_mouse_recorder
 
 		public async Task StartCommand()
 		{
+			EnableCommandList.Value = false;
+			EnableFileList.Value = false;
+			EnableSettings.Value = false;
+			EnableRecButton.Value = false;
 			IsPlaying = true;
 			//var oldx = 0;
 			//var oldy = 0;
@@ -126,6 +145,10 @@ namespace quick_mouse_recorder
 		{
 			if (!IsPlaying)
 				return;
+			EnableCommandList.Value = true;
+			EnableFileList.Value = true;
+			EnableSettings.Value = true;
+			EnableRecButton.Value = true;
 			//sbBlink.Stop(button_play);
 			IsPlaying = false;
 			//button_play.Content = "開始";
@@ -135,6 +158,10 @@ namespace quick_mouse_recorder
 
 		public void StartRecording()
 		{
+			EnableCommandList.Value = false;
+			EnableFileList.Value = false;
+			EnableSettings.Value = false;
+			EnablePlayButton = false;
 			IsRecording = true;
 			ListCommand.Clear();
 			cn.log("録画開始");
@@ -146,6 +173,10 @@ namespace quick_mouse_recorder
 				return;
 			if (selIndex < 0 || ListNames.Count <= selIndex)
 				return;
+			EnableCommandList.Value = true;
+			EnableFileList.Value = true;
+			EnableSettings.Value = true;
+			EnablePlayButton = true;
 			IsRecording = false;
 			Config.Instance.CommandList[ListNames[selIndex]] = ListCommand.ToList();
 			cn.log("録画終了");

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:quick_mouse_recorder"
         xmlns:System="clr-namespace:System;assembly=mscorlib" x:Name="window" x:Class="quick_mouse_recorder.MainWindow"
         mc:Ignorable="d"
-        Title="quick_mouse_recorder [v1.0]" Height="438" Width="464" ResizeMode="CanResizeWithGrip" Closed="Window_Closed" Background="White" Foreground="Black" Topmost="True" Icon="icon.png" MouseEnter="window_MouseEnter" MouseLeave="window_MouseLeave" Loaded="window_Loaded" SourceInitialized="Window_SourceInitialized">
+        Title="quick_mouse_recorder [v1.0]" Height="438" Width="464" ResizeMode="CanResizeWithGrip" Closed="Window_Closed" Background="White" Foreground="Black" Topmost="True" Icon="icon.png" MouseEnter="Window_MouseEnter" MouseLeave="Window_MouseLeave" Loaded="Window_Loaded" SourceInitialized="Window_SourceInitialized">
     <Window.DataContext>
         <local:MainViewModel/>
     </Window.DataContext>
@@ -43,14 +43,14 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row ="0" Grid.Column="0">
             <TextBlock Text="保存済みリスト" Width="100" HorizontalAlignment="Left" FontWeight="Bold"/>
-            <ListBox x:Name="listBoxCommandName" VerticalAlignment="Top" Height="240" SelectedIndex="{Binding SelectedIndexListName, Mode=TwoWay}" ItemsSource="{Binding ListNames}">
+            <ListBox x:Name="listBoxCommandName" VerticalAlignment="Top" Height="240" SelectedIndex="{Binding SelectedIndexListName, Mode=TwoWay}" ItemsSource="{Binding ListNames}" IsEnabled="{Binding EnableFileList.Value}">
                 <ListBox.Resources>
                     <ContextMenu x:Key="ContextMenu">
-                        <MenuItem Header="Add" Click="listboxCommandNameAdd_Context"/>
+                        <MenuItem Header="Add" Click="ListboxCommandNameAdd_Context"/>
                     </ContextMenu>
                     <ContextMenu x:Key="ContextMenu_Item">
-                        <MenuItem Header="Delete" Click="listboxCommandNameDelete_Context"/>
-                        <MenuItem Header="Rename" Click="listboxCommandNameRename_Context"/>
+                        <MenuItem Header="Delete" Click="ListboxCommandNameDelete_Context"/>
+                        <MenuItem Header="Rename" Click="ListboxCommandNameRename_Context"/>
                     </ContextMenu>
                     <Style TargetType="{x:Type ListBox}">
                         <Setter Property="ContextMenu" Value="{StaticResource ContextMenu}"/>
@@ -63,10 +63,10 @@
         </StackPanel>
         <StackPanel x:Name="stackPanel_r0c1" Grid.Column="1" VerticalAlignment="Top" Height="256">
             <TextBlock Text="登録内容" HorizontalAlignment="Left" FontWeight="Bold"/>
-            <ListView x:Name="listViewCommand" ItemsSource="{Binding ListCommand}" Height="240" SelectedIndex="{Binding SelectedIndexListCommand, Mode=TwoWay}" local:BehaviorScrollToSelected.DoScroll ="{Binding RelativeSource={RelativeSource Self}, Path=SelectedValue}">
+            <ListView x:Name="listViewCommand" ItemsSource="{Binding ListCommand}" Height="240" SelectedIndex="{Binding SelectedIndexListCommand, Mode=TwoWay}" local:BehaviorScrollToSelected.DoScroll ="{Binding RelativeSource={RelativeSource Self}, Path=SelectedValue}" IsEnabled="{Binding EnableCommandList.Value}">
                 <ListView.Resources>
                     <ContextMenu x:Key="ListViewItemResources">
-                        <MenuItem Header="Delete" Click="listViewCommandItemDelete_Context"/>
+                        <MenuItem Header="Delete" Click="ListViewCommandItemDelete_Context"/>
                     </ContextMenu>
                     <Style TargetType="{x:Type ListViewItem}">
                         <Setter Property="ContextMenu" Value="{StaticResource ListViewItemResources}"/>
@@ -84,10 +84,10 @@
             </ListView>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Center" Grid.Row="1" VerticalAlignment="Top" Margin="57,0" Height="50" Width="170">
-            <Button x:Name="button_play" Content="開始"  Width="75" Click="button_play_Click" Focusable="False" IsEnabled="{Binding CanablePlay}"/>
-            <Button x:Name="button_rec" Content="録画" Width="75" Click="button_rec_Click" Focusable="False" />
+            <Button x:Name="button_play" Content="開始"  Width="75" Click="Button_play_Click" Focusable="False" IsEnabled="{Binding EnablePlayButton}"/>
+            <Button x:Name="button_rec" Content="録画" Width="75" Click="Button_rec_Click" Focusable="False" IsEnabled="{Binding EnableRecButton.Value}" />
         </StackPanel>
-        <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="2">
+        <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="2" IsEnabled="{Binding EnableSettings.Value}">
             <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="2">
                 <TextBlock Text="{Binding Value, ElementName=slider_captureIval, StringFormat=録画間隔: \{0:f2\}}" Width="70"  TextAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
                 <Slider x:Name="slider_captureIval" TickPlacement="TopLeft" Width="206" Maximum="1" Minimum="0.01" SmallChange="0.01" LargeChange="0.1" TickFrequency="0.1" Value="{Binding CaptureInterval.Value, Mode=TwoWay}" />
