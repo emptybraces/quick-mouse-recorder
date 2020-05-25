@@ -23,11 +23,10 @@ namespace quick_mouse_recorder
 			InitializeComponent();
 		}
 
-
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
-			MaxHeight =	this.Height;
-			MaxWidth =	this.Width;
+			MaxHeight = this.Height;
+			MaxWidth = this.Width;
 			_sbBlink = (Storyboard)FindResource("Blink");
 			_interceptInput = new InterceptInput();
 			_interceptInput.AddEvent(HookMouse);
@@ -84,15 +83,20 @@ namespace quick_mouse_recorder
 		}
 		private void ListboxCommandNameRename_Context(object sender, RoutedEventArgs e)
 		{
-			if (listBoxCommandName.SelectedIndex == -1) return;
+			if (listBoxCommandName.SelectedIndex == -1)
+				return;
+			var sel_idx = listBoxCommandName.SelectedIndex;
 			var dialogue = new DialogueRename();
 			var old_name = listBoxCommandName.SelectedItem.ToString();
 			dialogue.textBox.Text = old_name;
+			InterceptInput.IsPausedKey = true;
 			var res = dialogue.ShowDialog();
-			if (res != true)
-				return;
-			var new_name = dialogue.textBox.Text;
-			VM.RenameEventName(old_name, new_name);
+			if (res == true) {
+				var new_name = dialogue.textBox.Text;
+				VM.RenameEventName(old_name, new_name);
+			}
+			InterceptInput.IsPausedKey = false;
+			listBoxCommandName.SelectedIndex = sel_idx;
 		}
 
 		private void ListViewCommandItemDelete_Context(object sener, RoutedEventArgs e)

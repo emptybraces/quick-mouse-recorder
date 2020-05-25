@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace quick_mouse_recorder
 {
@@ -23,9 +24,10 @@ namespace quick_mouse_recorder
 			}
 			set {
 				_selectedIndexListName = value;
-				RefreshCommandList(ListNames[value]);
+				if (value < ListNames.Count && 0 <= value)
+					RefreshCommandList(ListNames[value]);
 				NotifyPropertyChanged();
-				NotifyPropertyChanged("CanablePlay");
+				NotifyPropertyChanged("EnablePlayButton");
 			}
 		}
 		int _selectedIndexListCommand = -1;
@@ -40,7 +42,7 @@ namespace quick_mouse_recorder
 		}
 		public event System.Action OnFinishCommand;
 		public ReactiveProperty<float> CaptureInterval { get; } = new ReactiveProperty<float>();
-		public ReactiveProperty<string> TryCount { get; } = new ReactiveProperty<string>("1");
+		public ReactiveProperty<int> TryCount { get; } = new ReactiveProperty<int>(1);
 
 		public ReactiveProperty<VM_ContentHotKey> VM_ContentHotkey { get; } = new ReactiveProperty<VM_ContentHotKey>(new VM_ContentHotKey());
 		public bool EnableHotKey => VM_ContentHotkey.Value.EnableHotKey;
@@ -59,9 +61,15 @@ namespace quick_mouse_recorder
 			}
 		}
 		bool _enablePlayButton = true;
+		int _forceDisableCount;
 
 		public MainViewModel()
 		{
+			// フォーカスイベントの登録
+			//System.Windows.EventManager.RegisterClassHandler(typeof(InputBase), Keyboard.PreviewGotKeyboardFocusEvent, (KeyboardFocusChangedEventHandler)OnPreviewGotKeyboardFocus);
+			//System.Windows.EventManager.RegisterClassHandler(typeof(InputBase), Keyboard.PreviewLostKeyboardFocusEvent, (KeyboardFocusChangedEventHandler)OnPreviewLostKeyboardFocus);
+			System.Windows.EventManager.RegisterClassHandler(typeof(Xceed.Wpf.Toolkit.IntegerUpDown), Keyboard.PreviewGotKeyboardFocusEvent, (KeyboardFocusChangedEventHandler)OnPreviewGotKeyboardFocus);
+			System.Windows.EventManager.RegisterClassHandler(typeof(Xceed.Wpf.Toolkit.IntegerUpDown), Keyboard.PreviewLostKeyboardFocusEvent, (KeyboardFocusChangedEventHandler)OnPreviewLostKeyboardFocus);
 		}
 
 		public void Init()
@@ -109,7 +117,8 @@ namespace quick_mouse_recorder
 			IsPlaying = true;
 			//var oldx = 0;
 			//var oldy = 0;
-			int.TryParse(TryCount.Value, out int try_total);
+			int try_total = TryCount.Value;
+			//int.TryParse(TryCount.Value, out int try_total);
 			try_total = try_total <= 0 ? 1 : try_total;
 			cn.log(try_total);
 			for (int try_count = 0; try_count < try_total; ++try_count) {
@@ -226,6 +235,30 @@ namespace quick_mouse_recorder
 			var value = Config.Instance.CommandList[oldName];
 			Config.Instance.CommandList.Remove(oldName);
 			Config.Instance.CommandList[newName] = value;
+		}
+
+
+		void OnPreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+		{
+			++_forceDisableCount;
+			InterceptInput.IsPausedKey = true;
+		}
+
+		void OnPreviewLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+		{
+			--_forceDisableCount;
+			if (_forceDisableCount == 0) {
+				InterceptInput.IsPausedKey = false;
+			}
+		}
+
+		void EnableAllControls(bool enabled)
+		{
+			EnableFileList.Value = enabled;
+			EnableCommandList.Value = enabled;
+			EnableSettings.Value = enabled;
+			EnableRecButton.Value = enabled;
+			EnablePlayButton = enabled;
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
