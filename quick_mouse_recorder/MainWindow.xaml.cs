@@ -42,13 +42,15 @@ namespace quick_mouse_recorder
 			slider_captureIval.Value = Config.Instance.IntervalCapture;
 		}
 
-		private void Window_Closed(object sender, EventArgs e)
+		private void window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
 			_interceptInput.Stop();
 			// 設定保存
-			VM.SaveConfig();
+			var result = MessageBox.Show("Are you sure save data?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
+			if (result == MessageBoxResult.Yes) {
+				VM.SaveConfig();
+			}
 		}
-
 		private void Window_MouseEnter(object sender, MouseEventArgs e)
 		{
 			var context = (VM_ContentHotKey)xNameCheckBoxHotKey.DataContext;
@@ -70,33 +72,39 @@ namespace quick_mouse_recorder
 			SwitchRecording();
 		}
 
-		private void ListboxCommandNameAdd_Context(object sender, RoutedEventArgs e)
+		private void ListboxPlayListAdd_Context(object sender, RoutedEventArgs e)
 		{
-			var new_name = VM.AddNewCommandName();
+			var new_name = VM.AddNewPlayList();
 			if (new_name != null)
-				listBoxCommandName.SelectedItem = new_name;
+				xnListBoxPlayList.SelectedItem = new_name;
 		}
-		private void ListboxCommandNameDelete_Context(object sender, RoutedEventArgs e)
+		private void ListboxPlayListRemove_Context(object sender, RoutedEventArgs e)
 		{
-			if (listBoxCommandName.SelectedIndex == -1) return;
-			VM.RemoveEventName(listBoxCommandName.SelectedItem.ToString());
+			InterceptInput.IsPausedKey = true;
+			var result = MessageBox.Show($"Are you sure remove a \"{xnListBoxPlayList.SelectedItem}\"", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+			if (result == MessageBoxResult.OK) {
+				VM.RemovePlayList(xnListBoxPlayList.SelectedIndex);
+			}
+			InterceptInput.IsPausedKey = false;
 		}
-		private void ListboxCommandNameRename_Context(object sender, RoutedEventArgs e)
+		private void ListboxPlayListDuplicate_Context(object sender, RoutedEventArgs e)
 		{
-			if (listBoxCommandName.SelectedIndex == -1)
-				return;
-			var sel_idx = listBoxCommandName.SelectedIndex;
+			VM.DuplicatePlayList(xnListBoxPlayList.SelectedIndex);
+		}
+		private void ListboxPlayListRename_Context(object sender, RoutedEventArgs e)
+		{
+			var sel_idx = xnListBoxPlayList.SelectedIndex;
 			var dialogue = new DialogueRename();
-			var old_name = listBoxCommandName.SelectedItem.ToString();
+			var old_name = xnListBoxPlayList.SelectedItem.ToString();
 			dialogue.textBox.Text = old_name;
 			InterceptInput.IsPausedKey = true;
 			var res = dialogue.ShowDialog();
 			if (res == true) {
 				var new_name = dialogue.textBox.Text;
-				VM.RenameEventName(old_name, new_name);
+				VM.RenameEventName(sel_idx, new_name);
 			}
 			InterceptInput.IsPausedKey = false;
-			listBoxCommandName.SelectedIndex = sel_idx;
+			xnListBoxPlayList.SelectedIndex = sel_idx;
 		}
 
 		private void ListViewCommandItemDelete_Context(object sener, RoutedEventArgs e)
@@ -155,7 +163,7 @@ namespace quick_mouse_recorder
 		{
 			if (VM.IsPlaying)
 				return;
-			if (listBoxCommandName.SelectedIndex < 0)
+			if (xnListBoxPlayList.SelectedIndex < 0)
 				return;
 			if (VM.IsRecording)
 				StopRecording();
@@ -178,7 +186,7 @@ namespace quick_mouse_recorder
 			_sbBlink.Stop(button_rec);
 			button_rec.Content = "録画";
 			InterceptInput.IsPausedMouse = true;
-			VM.StopRecodring(listBoxCommandName.SelectedIndex);
+			VM.StopRecodring(xnListBoxPlayList.SelectedIndex);
 		}
 
 		void SwitchCommand()

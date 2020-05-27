@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:quick_mouse_recorder"
         xmlns:System="clr-namespace:System;assembly=mscorlib" xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" x:Name="window" x:Class="quick_mouse_recorder.MainWindow"
         mc:Ignorable="d"
-        Title="quick_mouse_recorder [v1.0]" Height="438" Width="464" ResizeMode="CanResizeWithGrip" Closed="Window_Closed" Background="White" Foreground="Black" Topmost="True" Icon="icon.png" MouseEnter="Window_MouseEnter" MouseLeave="Window_MouseLeave" Loaded="Window_Loaded" SourceInitialized="Window_SourceInitialized">
+        Title="quick_mouse_recorder [v1.0]" Height="438" Width="464" ResizeMode="CanResizeWithGrip" Background="White" Foreground="Black" Topmost="True" Icon="icon.png" MouseEnter="Window_MouseEnter" MouseLeave="Window_MouseLeave" Loaded="Window_Loaded" SourceInitialized="Window_SourceInitialized" Closing="window_Closing">
     <Window.Resources>
         <!--<Style TargetType="{x:Type Button}">
             <Setter Property="Margin" Value="0,10,10,10"/>
@@ -42,15 +42,16 @@
             <RowDefinition Height="96*"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row ="0" Grid.Column="0">
-            <TextBlock Text="保存済みリスト" Width="100" HorizontalAlignment="Left" FontWeight="Bold"/>
-            <ListBox x:Name="listBoxCommandName" VerticalAlignment="Top" Height="240" SelectedIndex="{Binding SelectedIndexListName, Mode=TwoWay}" ItemsSource="{Binding ListNames}" IsEnabled="{Binding EnableFileList.Value}">
+            <TextBlock Text="Play List" Width="100" HorizontalAlignment="Left" FontWeight="Bold"/>
+            <ListBox x:Name="xnListBoxPlayList" VerticalAlignment="Top" Height="240" SelectedIndex="{Binding SelectedIndexPlayName, Mode=TwoWay}" ItemsSource="{Binding ListPlayListNames}" IsEnabled="{Binding EnableFileList.Value}">
                 <ListBox.Resources>
                     <ContextMenu x:Key="ContextMenu">
-                        <MenuItem Header="Add" Click="ListboxCommandNameAdd_Context"/>
+                        <MenuItem Header="Add" Click="ListboxPlayListAdd_Context"/>
                     </ContextMenu>
                     <ContextMenu x:Key="ContextMenu_Item">
-                        <MenuItem Header="Delete" Click="ListboxCommandNameDelete_Context"/>
-                        <MenuItem Header="Rename" Click="ListboxCommandNameRename_Context"/>
+                        <MenuItem Header="Delete" Click="ListboxPlayListRemove_Context"/>
+                        <MenuItem Header="Duplicate" Click="ListboxPlayListDuplicate_Context"/>
+                        <MenuItem Header="Rename" Click="ListboxPlayListRename_Context"/>
                     </ContextMenu>
                     <Style TargetType="{x:Type ListBox}">
                         <Setter Property="ContextMenu" Value="{StaticResource ContextMenu}"/>
@@ -62,8 +63,8 @@
             </ListBox>
         </StackPanel>
         <StackPanel x:Name="stackPanel_r0c1" Grid.Column="1" VerticalAlignment="Top" Height="256">
-            <TextBlock Text="登録内容" HorizontalAlignment="Left" FontWeight="Bold"/>
-            <ListView x:Name="listViewCommand" ItemsSource="{Binding ListCommand}" Height="240" SelectedIndex="{Binding SelectedIndexListCommand, Mode=TwoWay}" local:BehaviorScrollToSelected.DoScroll ="{Binding SelectedValue, RelativeSource={RelativeSource Self}}" IsEnabled="{Binding EnableCommandList.Value}">
+            <TextBlock Text="Command List" HorizontalAlignment="Left" FontWeight="Bold"/>
+            <ListView x:Name="listViewCommand" ItemsSource="{Binding ListCurrentSelectedCommands}" Height="240" SelectedIndex="{Binding SelectedIndexListCommand, Mode=TwoWay}" local:BehaviorScrollToSelected.DoScroll ="{Binding SelectedValue, RelativeSource={RelativeSource Self}}" IsEnabled="{Binding EnableCommandList.Value}">
                 <ListView.Resources>
                     <ContextMenu x:Key="ListViewItemResources">
                         <MenuItem Header="Delete" Click="ListViewCommandItemDelete_Context"/>

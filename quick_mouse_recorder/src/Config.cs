@@ -19,12 +19,18 @@ namespace quick_mouse_recorder
 		}
 	}
 	[Serializable]
+	public class PlayData
+	{
+		public string Name { get; set; }
+		public CommandChunk[] Commands { get; set; } = new CommandChunk[0];
+	}
+	[Serializable]
 	public class Config
 	{
 		// members
-		public Dictionary<string, List<CommandChunk>> CommandList { get; set; } = new Dictionary<string, List<CommandChunk>>();
-		public float IntervalCapture { get; set; }
-		public bool EnableHotKey{ get; set; }
+		public List<PlayData> PlayList { get; set; } = new List<PlayData>();
+		public float IntervalCapture { get; set; } = 0.01f;
+		public bool EnableHotKey { get; set; }
 
 		static Config _config;
 		public static Config Instance {
@@ -64,7 +70,7 @@ namespace quick_mouse_recorder
 
 			if (File.Exists(configFile) == false) {
 				// 設定ファイルなし
-				return null;
+				return new Config();
 			}
 
 			using (var reader = new StreamReader(configFile, Encoding.UTF8)) {

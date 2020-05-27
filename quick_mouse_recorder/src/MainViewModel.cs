@@ -1,5 +1,4 @@
 ﻿using Reactive.Bindings;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -12,20 +11,19 @@ namespace quick_mouse_recorder
 {
 	class MainViewModel : INotifyPropertyChanged
 	{
-		public ObservableCollection<CommandChunk> ListCommand { get; } = new ObservableCollection<CommandChunk>();
-		public ObservableCollection<string> ListNames { get; } = new ObservableCollection<string>();
-		//public Config Config { get; private set; }
+		public ObservableCollection<CommandChunk> ListCurrentSelectedCommands { get; } = new ObservableCollection<CommandChunk>();
+		public ObservableCollection<string> ListPlayListNames { get; } = new ObservableCollection<string>();
 		public bool IsRecording { get; private set; }
 		public bool IsPlaying { get; private set; }
 		int _selectedIndexListName;
-		public int SelectedIndexListName {
+		public int SelectedIndexPlayName {
 			get {
 				return _selectedIndexListName;
 			}
 			set {
 				_selectedIndexListName = value;
-				if (value < ListNames.Count && 0 <= value)
-					RefreshCommandList(ListNames[value]);
+				if (value < ListPlayListNames.Count && 0 <= value)
+					RefreshCommandList(value);
 				NotifyPropertyChanged();
 				NotifyPropertyChanged("EnablePlayButton");
 			}
@@ -45,7 +43,7 @@ namespace quick_mouse_recorder
 		public ReactiveProperty<int> TryCount { get; } = new ReactiveProperty<int>(1);
 
 		public ReactiveProperty<VM_ContentHotKey> VM_ContentHotkey { get; } = new ReactiveProperty<VM_ContentHotKey>(new VM_ContentHotKey());
-		public bool EnableHotKey => VM_ContentHotkey.Value.EnableHotKey;
+		public bool EnableHotKey => ListCurrentSelectedCommands.Any() && VM_ContentHotkey.Value.EnableHotKey;
 
 		public ReactiveProperty<bool> EnableFileList { get; } = new ReactiveProperty<bool>(true);
 		public ReactiveProperty<bool> EnableCommandList { get; } = new ReactiveProperty<bool>(true);
@@ -53,7 +51,7 @@ namespace quick_mouse_recorder
 		public ReactiveProperty<bool> EnableRecButton { get; } = new ReactiveProperty<bool>(true);
 		public bool EnablePlayButton {
 			get {
-				return _enablePlayButton && ListCommand.Any();
+				return _enablePlayButton && ListCurrentSelectedCommands.Any();
 			}
 			set {
 				_enablePlayButton = value;
@@ -74,18 +72,13 @@ namespace quick_mouse_recorder
 
 		public void Init()
 		{
-			//Config = Config.ReadConfig();
-			//if (Config == null) {
-			//	cn.log("make new config");
-			//	Config = new Config();
-			//	return;
-			//}
-			if (Config.Instance.CommandList.Any()) {
-				foreach (var i in Config.Instance.CommandList.Values.First())
-					ListCommand.Add(i);
-				foreach (var i in Config.Instance.CommandList.Keys)
-					ListNames.Add(i);
-				//listBoxEventName.SelectedIndex = 0;
+			if (Config.Instance.PlayList.Any()) {
+				var play_list = Config.Instance.PlayList;
+				for (int i = 0; i < play_list.Count; ++i) {
+					ListPlayListNames.Add(play_list[i].Name);
+					foreach (var jj in play_list[i].Commands)
+						ListCurrentSelectedCommands.Add(jj);
+				}
 			}
 			VM_ContentHotkey.Value.Init();
 			NotifyPropertyChanged(nameof(EnablePlayButton));
@@ -94,7 +87,7 @@ namespace quick_mouse_recorder
 		public void SaveConfig()
 		{
 			Config.Instance.IntervalCapture = CaptureInterval.Value;
-			cn.log(Config.Instance.IntervalCapture);
+			Config.Instance.EnableHotKey = VM_ContentHotkey.Value.IsChecked.Value;
 			Config.WriteConfig(Config.Instance);
 		}
 
@@ -120,11 +113,11 @@ namespace quick_mouse_recorder
 			int try_total = TryCount.Value;
 			//int.TryParse(TryCount.Value, out int try_total);
 			try_total = try_total <= 0 ? 1 : try_total;
-			cn.log(try_total);
 			for (int try_count = 0; try_count < try_total; ++try_count) {
+				cn.log($"{try_total+1}回目");
 				var prev_wait = 0;
-				for (int i1 = 0; i1 < ListCommand.Count; i1++) {
-					var cmd = ListCommand[i1];
+				for (int i1 = 0; i1 < ListCurrentSelectedCommands.Count; i1++) {
+					var cmd = ListCurrentSelectedCommands[i1];
 					if (!IsPlaying) {
 						cn.log("中断しました");
 						break;
@@ -172,7 +165,7 @@ namespace quick_mouse_recorder
 			EnableSettings.Value = false;
 			EnablePlayButton = false;
 			IsRecording = true;
-			ListCommand.Clear();
+			ListCurrentSelectedCommands.Clear();
 			cn.log("録画開始");
 		}
 
@@ -180,61 +173,65 @@ namespace quick_mouse_recorder
 		{
 			if (!IsRecording)
 				return;
-			if (selIndex < 0 || ListNames.Count <= selIndex)
+			if (selIndex < 0 || ListPlayListNames.Count <= selIndex)
 				return;
 			EnableCommandList.Value = true;
 			EnableFileList.Value = true;
 			EnableSettings.Value = true;
 			EnablePlayButton = true;
 			IsRecording = false;
-			Config.Instance.CommandList[ListNames[selIndex]] = ListCommand.ToList();
+			Config.Instance.PlayList[selIndex].Commands = ListCurrentSelectedCommands.ToArray();
 			cn.log("録画終了");
 		}
 
-		public void RefreshCommandList(string eventName)
+		public void RefreshCommandList(int idx)
 		{
-			ListCommand.Clear();
-			if (Config.Instance.CommandList.TryGetValue(eventName, out var commands)) {
-				foreach (var i in commands)
-					ListCommand.Add(i);
-			}
+			ListCurrentSelectedCommands.Clear();
+			foreach (var i in Config.Instance.PlayList[idx].Commands)
+				ListCurrentSelectedCommands.Add(i);
 		}
 
 		public void AddCommand(CommandChunk newItem)
 		{
-			ListCommand.Add(newItem);
+			ListCurrentSelectedCommands.Add(newItem);
 		}
 
-		public string AddNewCommandName()
+		public string AddNewPlayList()
 		{
 			for (int i = 1; i < 100; ++i) {
 				var name = "new_" + i;
-				if (!ListNames.Contains(name)) {
-					ListNames.Add(name);
-					Config.Instance.CommandList[name] = new List<CommandChunk>();
+				if (!ListPlayListNames.Contains(name)) {
+					ListPlayListNames.Add(name);
+					Config.Instance.PlayList.Add(new PlayData { Name = name });
 					return name;
 				}
 			}
 			return null;
 		}
 
-		public void RemoveEventName(string name)
+		public string DuplicatePlayList(int srcIndex)
 		{
-			ListNames.Remove(name);
-			Config.Instance.CommandList.Remove(name);
+			if (0 <= srcIndex) {
+				var copy_name = ListPlayListNames[srcIndex] + "_copy";
+				Config.Instance.PlayList.Insert(srcIndex, new PlayData { Name = copy_name, Commands = ListCurrentSelectedCommands.ToArray() });
+				ListPlayListNames.Insert(srcIndex, copy_name);
+				SelectedIndexPlayName = srcIndex;
+				return copy_name;
+			}
+			return null;
 		}
 
-		public void RenameEventName(string oldName, string newName)
+		public void RemovePlayList(int idx)
 		{
-			for (int i = 0; i < ListNames.Count; ++i) {
-				if (ListNames[i] == oldName) {
-					ListNames[i] = newName;
-					break;
-				}
-			}
-			var value = Config.Instance.CommandList[oldName];
-			Config.Instance.CommandList.Remove(oldName);
-			Config.Instance.CommandList[newName] = value;
+			ListPlayListNames.RemoveAt(idx);
+			ListCurrentSelectedCommands.Clear();
+			Config.Instance.PlayList.RemoveAt(idx);
+		}
+
+		public void RenameEventName(int idx, string newName)
+		{
+			ListPlayListNames[idx] = newName;
+			Config.Instance.PlayList[idx].Name = newName;
 		}
 
 
@@ -250,15 +247,6 @@ namespace quick_mouse_recorder
 			if (_forceDisableCount == 0) {
 				InterceptInput.IsPausedKey = false;
 			}
-		}
-
-		void EnableAllControls(bool enabled)
-		{
-			EnableFileList.Value = enabled;
-			EnableCommandList.Value = enabled;
-			EnableSettings.Value = enabled;
-			EnableRecButton.Value = enabled;
-			EnablePlayButton = enabled;
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
