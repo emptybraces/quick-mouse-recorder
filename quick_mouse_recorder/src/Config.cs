@@ -29,7 +29,8 @@ namespace quick_mouse_recorder
 	{
 		// members
 		public List<PlayData> PlayList { get; set; } = new List<PlayData>();
-		public float IntervalCapture { get; set; } = 0.01f;
+		public float CaptureInterval { get; set; } = 0.01f;
+		//public float RepeatInterval { get; set; }
 		public bool EnableHotKey { get; set; }
 
 		static Config _config;

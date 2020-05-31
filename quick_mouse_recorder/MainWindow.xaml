@@ -44,6 +44,10 @@
         <StackPanel Grid.Row ="0" Grid.Column="0">
             <TextBlock Text="Play List" Width="100" HorizontalAlignment="Left" FontWeight="Bold"/>
             <ListBox x:Name="xnListBoxPlayList" VerticalAlignment="Top" Height="240" SelectedIndex="{Binding SelectedIndexPlayName, Mode=TwoWay}" ItemsSource="{Binding ListPlayListNames}" IsEnabled="{Binding EnableFileList.Value}">
+                <ListBox.InputBindings>
+                    <KeyBinding Gesture="Del" Command="{Binding ListboxKeyBindRemoveSelectedItem}"/>
+                    <KeyBinding Gesture="F2" Command="{Binding ListboxKeyBindRenameSelectedItem}"/>
+                </ListBox.InputBindings>
                 <ListBox.Resources>
                     <ContextMenu x:Key="ContextMenu">
                         <MenuItem Header="Add" Click="ListboxPlayListAdd_Context"/>
@@ -96,11 +100,13 @@
             </StackPanel.Resources>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Value, ElementName=slider_captureIval, StringFormat=REC Interval: \{0:f2\}}" TextAlignment="Right" VerticalAlignment="Center" FontSize="10"/>
-                <Slider x:Name="slider_captureIval" TickPlacement="TopLeft" Width="182" Maximum="1" Minimum="0.01" SmallChange="0.01" LargeChange="0.1" TickFrequency="0.1" Value="{Binding CaptureInterval.Value, Mode=TwoWay}" />
+                <Slider x:Name="xNameSliderCaptureIval" TickPlacement="TopLeft" Width="182" Maximum="1" Minimum="0.01" SmallChange="0.01" LargeChange="0.1" TickFrequency="0.1" Value="{Binding CaptureInterval.Value, Mode=TwoWay}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Repeat Count: " VerticalAlignment="Center" FontSize="10" HorizontalAlignment="Center" TextAlignment="Right"/>
-                <xctk:IntegerUpDown Maximum="99" Minimum="0" Value="{Binding TryCount.Value, Mode=TwoWay}" />
+                <xctk:IntegerUpDown Maximum="99" Minimum="0" Value="{Binding RepeatCount.Value, Mode=TwoWay}" />
+                <TextBlock Text="Interval: " VerticalAlignment="Center" FontSize="10" Width="Auto"/>
+                <xctk:SingleUpDown Maximum="999" Minimum="0" Value="{Binding RepeatInterval.Value, Mode=TwoWay}" IsEnabled="{Binding RepeatIntervalEnabled}" Increment="0.5" />
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Use Hotkey: " VerticalAlignment="Center" FontSize="10" HorizontalAlignment="Center" TextAlignment="Right"/>

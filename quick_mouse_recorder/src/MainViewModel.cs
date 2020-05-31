@@ -1,10 +1,12 @@
 ﻿using Reactive.Bindings;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace quick_mouse_recorder
@@ -13,8 +15,11 @@ namespace quick_mouse_recorder
 	{
 		public ObservableCollection<CommandChunk> ListCurrentSelectedCommands { get; } = new ObservableCollection<CommandChunk>();
 		public ObservableCollection<string> ListPlayListNames { get; } = new ObservableCollection<string>();
+		public RelayCommand ListboxKeyBindRemoveSelectedItem { get; private set; }
+		public RelayCommand ListboxKeyBindRenameSelectedItem { get; private set; }
 		public bool IsRecording { get; private set; }
 		public bool IsPlaying { get; private set; }
+		public bool NeedSave { get; private set; }
 		int _selectedIndexListName;
 		public int SelectedIndexPlayName {
 			get {
@@ -40,7 +45,9 @@ namespace quick_mouse_recorder
 		}
 		public event System.Action OnFinishCommand;
 		public ReactiveProperty<float> CaptureInterval { get; } = new ReactiveProperty<float>();
-		public ReactiveProperty<int> TryCount { get; } = new ReactiveProperty<int>(1);
+		public ReactiveProperty<int> RepeatCount { get; } = new ReactiveProperty<int>(1);
+		public ReactiveProperty<float> RepeatInterval { get; } = new ReactiveProperty<float>(0);
+		public bool RepeatIntervalEnabled => 1 < RepeatCount.Value;
 
 		public ReactiveProperty<VM_ContentHotKey> VM_ContentHotkey { get; } = new ReactiveProperty<VM_ContentHotKey>(new VM_ContentHotKey());
 		public bool EnableHotKey => ListCurrentSelectedCommands.Any() && VM_ContentHotkey.Value.EnableHotKey;
@@ -68,6 +75,8 @@ namespace quick_mouse_recorder
 			//System.Windows.EventManager.RegisterClassHandler(typeof(InputBase), Keyboard.PreviewLostKeyboardFocusEvent, (KeyboardFocusChangedEventHandler)OnPreviewLostKeyboardFocus);
 			System.Windows.EventManager.RegisterClassHandler(typeof(Xceed.Wpf.Toolkit.IntegerUpDown), Keyboard.PreviewGotKeyboardFocusEvent, (KeyboardFocusChangedEventHandler)OnPreviewGotKeyboardFocus);
 			System.Windows.EventManager.RegisterClassHandler(typeof(Xceed.Wpf.Toolkit.IntegerUpDown), Keyboard.PreviewLostKeyboardFocusEvent, (KeyboardFocusChangedEventHandler)OnPreviewLostKeyboardFocus);
+			ListboxKeyBindRemoveSelectedItem = new RelayCommand(_ => RemovePlayList(), _ => 0 <= SelectedIndexPlayName);
+			ListboxKeyBindRenameSelectedItem = new RelayCommand(_ => RenamePlayList(), _ => 0 <= SelectedIndexPlayName);
 		}
 
 		public void Init()
@@ -82,12 +91,18 @@ namespace quick_mouse_recorder
 			}
 			VM_ContentHotkey.Value.Init();
 			NotifyPropertyChanged(nameof(EnablePlayButton));
+			RepeatCount.Subscribe(_ => {
+				NotifyPropertyChanged("RepeatIntervalEnabled");
+			});
+			CaptureInterval.Value = Config.Instance.CaptureInterval;
+			//RepeatInterval.Value = Config.Instance.RepeatInterval;
 		}
 
 		public void SaveConfig()
 		{
-			Config.Instance.IntervalCapture = CaptureInterval.Value;
+			Config.Instance.CaptureInterval = CaptureInterval.Value;
 			Config.Instance.EnableHotKey = VM_ContentHotkey.Value.IsChecked.Value;
+			//Config.Instance.RepeatInterval = RepeatInterval.Value;
 			Config.WriteConfig(Config.Instance);
 		}
 
@@ -110,11 +125,11 @@ namespace quick_mouse_recorder
 			IsPlaying = true;
 			//var oldx = 0;
 			//var oldy = 0;
-			int try_total = TryCount.Value;
+			int try_total = RepeatCount.Value;
 			//int.TryParse(TryCount.Value, out int try_total);
 			try_total = try_total <= 0 ? 1 : try_total;
 			for (int try_count = 0; try_count < try_total; ++try_count) {
-				cn.log($"{try_total+1}回目");
+				cn.log($"{try_total + 1}回目");
 				var prev_wait = 0;
 				for (int i1 = 0; i1 < ListCurrentSelectedCommands.Count; i1++) {
 					var cmd = ListCurrentSelectedCommands[i1];
@@ -139,6 +154,7 @@ namespace quick_mouse_recorder
 					//_OnSelectedCommandListItem(i1);
 					SelectedIndexListCommand = i1;
 				}
+				await Task.Delay(TimeSpan.FromSeconds(RepeatInterval.Value));
 			}
 			StopCommand();
 		}
@@ -198,6 +214,7 @@ namespace quick_mouse_recorder
 
 		public string AddNewPlayList()
 		{
+			NeedSave = true;
 			for (int i = 1; i < 100; ++i) {
 				var name = "new_" + i;
 				if (!ListPlayListNames.Contains(name)) {
@@ -211,6 +228,7 @@ namespace quick_mouse_recorder
 
 		public string DuplicatePlayList(int srcIndex)
 		{
+			NeedSave = true;
 			if (0 <= srcIndex) {
 				var copy_name = ListPlayListNames[srcIndex] + "_copy";
 				Config.Instance.PlayList.Insert(srcIndex, new PlayData { Name = copy_name, Commands = ListCurrentSelectedCommands.ToArray() });
@@ -221,19 +239,36 @@ namespace quick_mouse_recorder
 			return null;
 		}
 
-		public void RemovePlayList(int idx)
+		public void RemovePlayList()
 		{
-			ListPlayListNames.RemoveAt(idx);
-			ListCurrentSelectedCommands.Clear();
-			Config.Instance.PlayList.RemoveAt(idx);
+			NeedSave = true;
+			InterceptInput.IsPausedKey = true;
+			var idx = SelectedIndexPlayName;
+			var result = MessageBox.Show(Application.Current.MainWindow, $"Are you sure remove a \"{ListPlayListNames[idx]}\"", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+			if (result == MessageBoxResult.OK) {
+				Config.Instance.PlayList.RemoveAt(idx);
+				ListPlayListNames.RemoveAt(idx);
+				ListCurrentSelectedCommands.Clear();
+			}
+			InterceptInput.IsPausedKey = false;
 		}
 
-		public void RenameEventName(int idx, string newName)
+		public void RenamePlayList()
 		{
-			ListPlayListNames[idx] = newName;
-			Config.Instance.PlayList[idx].Name = newName;
+			NeedSave = true;
+			InterceptInput.IsPausedKey = true;
+			var idx = SelectedIndexPlayName;
+			var dialogue = new DialogueRename();
+			dialogue.textBox.Text = ListPlayListNames[idx];
+			var res = dialogue.ShowDialog();
+			if (res == true) {
+				var new_name = dialogue.textBox.Text;
+				ListPlayListNames[idx] = new_name;
+				Config.Instance.PlayList[idx].Name = new_name;
+			}
+			SelectedIndexPlayName = idx;
+			InterceptInput.IsPausedKey = false;
 		}
-
 
 		void OnPreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
 		{

@@ -115,6 +115,7 @@
     </ApplicationDefinition>
     <Compile Include="src\BehaviourScrollToSelected.cs" />
     <Compile Include="src\InterceptInput.cs" />
+    <Compile Include="src\RelayCommand.cs" />
     <Compile Include="src\VM_ContentHotKey.cs" />
     <Compile Include="src\MainViewModel.cs" />
     <Compile Include="src\Console.cs" />

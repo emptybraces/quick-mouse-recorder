@@ -39,16 +39,21 @@ namespace quick_mouse_recorder
 				button_play.Content = "開始";
 			};
 			VM.Init();
-			slider_captureIval.Value = Config.Instance.IntervalCapture;
+			xNameSliderCaptureIval.Value = Config.Instance.CaptureInterval;
 		}
 
 		private void window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
 			_interceptInput.Stop();
 			// 設定保存
-			var result = MessageBox.Show("Are you sure save data?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
-			if (result == MessageBoxResult.Yes) {
-				VM.SaveConfig();
+			if (VM.NeedSave) {
+				var result = MessageBox.Show("Do you want to save the updated data?", "Confirm", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+				if (result == MessageBoxResult.Yes) {
+					VM.SaveConfig();
+				}
+				else if (result == MessageBoxResult.Cancel) {
+					e.Cancel = true;
+				}
 			}
 		}
 		private void Window_MouseEnter(object sender, MouseEventArgs e)
@@ -80,12 +85,7 @@ namespace quick_mouse_recorder
 		}
 		private void ListboxPlayListRemove_Context(object sender, RoutedEventArgs e)
 		{
-			InterceptInput.IsPausedKey = true;
-			var result = MessageBox.Show($"Are you sure remove a \"{xnListBoxPlayList.SelectedItem}\"", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question);
-			if (result == MessageBoxResult.OK) {
-				VM.RemovePlayList(xnListBoxPlayList.SelectedIndex);
-			}
-			InterceptInput.IsPausedKey = false;
+			VM.RemovePlayList();
 		}
 		private void ListboxPlayListDuplicate_Context(object sender, RoutedEventArgs e)
 		{
@@ -93,18 +93,7 @@ namespace quick_mouse_recorder
 		}
 		private void ListboxPlayListRename_Context(object sender, RoutedEventArgs e)
 		{
-			var sel_idx = xnListBoxPlayList.SelectedIndex;
-			var dialogue = new DialogueRename();
-			var old_name = xnListBoxPlayList.SelectedItem.ToString();
-			dialogue.textBox.Text = old_name;
-			InterceptInput.IsPausedKey = true;
-			var res = dialogue.ShowDialog();
-			if (res == true) {
-				var new_name = dialogue.textBox.Text;
-				VM.RenameEventName(sel_idx, new_name);
-			}
-			InterceptInput.IsPausedKey = false;
-			xnListBoxPlayList.SelectedIndex = sel_idx;
+			VM.RenamePlayList();
 		}
 
 		private void ListViewCommandItemDelete_Context(object sener, RoutedEventArgs e)
@@ -115,7 +104,7 @@ namespace quick_mouse_recorder
 		void HookMouse(uint mouseId, InterceptInput.Mouse.HookData data)
 		{
 			// 移動のみ一定時間のインターバルを持たせる
-			if (mouseId == InterceptInput.Mouse.WM_MOUSEMOVE && _timer.ElapsedMilliseconds < slider_captureIval.Value * 1000)
+			if (mouseId == InterceptInput.Mouse.WM_MOUSEMOVE && _timer.ElapsedMilliseconds < xNameSliderCaptureIval.Value * 1000)
 				return;
 			// アプリケーション内のイベントは無視する
 			if (Left < data.pt.x && data.pt.x <= Left + Width && Top < data.pt.y && data.pt.y < Top + Height)
