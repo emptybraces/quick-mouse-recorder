@@ -7,8 +7,8 @@ namespace quick_mouse_recorder
 	{
 		Key _key;
 		Mouse _mouse;
-		public static bool IsPausedMouse { get; set; }
-		public static bool IsPausedKey { get; set; }
+		public static bool EnableMouseInput { get; set; } = false;
+		public static bool EnableKeyInput { get; set; } = true;
 
 		public InterceptInput()
 		{
@@ -43,7 +43,7 @@ namespace quick_mouse_recorder
 			}
 			static IntPtr CbHook(int nCode, uint wParam, ref HookData lParam)
 			{
-				if (!IsPausedKey && 0 <= nCode) {
+				if (EnableKeyInput && 0 <= nCode) {
 					//int vkCode = Marshal.ReadInt32(lParam);
 					_cbHook?.Invoke(wParam, lParam);
 				}
@@ -105,7 +105,7 @@ namespace quick_mouse_recorder
 			}
 			static IntPtr CbHook(int nCode, uint wParam, ref HookData lParam)
 			{
-				if (!IsPausedMouse && 0 <= nCode) {
+				if (EnableMouseInput && 0 <= nCode) {
 					_cbHook?.Invoke(wParam, lParam);
 				}
 				return Native.CallNextHookEx(_handle, nCode, wParam, ref lParam);

@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -43,6 +44,7 @@ namespace quick_mouse_recorder
 				NotifyPropertyChanged();
 			}
 		}
+
 		public event System.Action OnFinishCommand;
 		public ReactiveProperty<float> CaptureInterval { get; } = new ReactiveProperty<float>();
 		public ReactiveProperty<int> RepeatCount { get; } = new ReactiveProperty<int>(1);
@@ -67,6 +69,7 @@ namespace quick_mouse_recorder
 		}
 		bool _enablePlayButton = true;
 		int _forceDisableCount;
+		CancellationTokenSource _cts;
 
 		public MainViewModel()
 		{
@@ -106,18 +109,11 @@ namespace quick_mouse_recorder
 			Config.WriteConfig(Config.Instance);
 		}
 
-		public void ProcCommand()
+		public async Task StartCommand(CancellationToken cancelToken)
 		{
-			if (IsPlaying) {
-				StopCommand();
-			}
-			else {
-				_ = StartCommand();
-			}
-		}
-
-		public async Task StartCommand()
-		{
+			_cts?.Cancel();
+			_cts = new CancellationTokenSource();
+			var cancel_token = _cts.Token;
 			EnableCommandList.Value = false;
 			EnableFileList.Value = false;
 			EnableSettings.Value = false;
@@ -126,18 +122,17 @@ namespace quick_mouse_recorder
 			//var oldx = 0;
 			//var oldy = 0;
 			int try_total = RepeatCount.Value;
-			//int.TryParse(TryCount.Value, out int try_total);
 			try_total = try_total <= 0 ? 1 : try_total;
 			for (int try_count = 0; try_count < try_total; ++try_count) {
-				cn.log($"{try_total + 1}回目");
+				cn.log($"{try_count + 1}回目開始");
 				var prev_wait = 0;
 				for (int i1 = 0; i1 < ListCurrentSelectedCommands.Count; i1++) {
 					var cmd = ListCurrentSelectedCommands[i1];
-					if (!IsPlaying) {
-						cn.log("中断しました");
-						break;
-					}
 					await Task.Delay(cmd.Time - prev_wait);
+					if (cancel_token.IsCancellationRequested) {
+						cn.log("中断しました");
+						cancel_token.ThrowIfCancellationRequested();
+					}
 					prev_wait = cmd.Time;
 					switch (cmd.Id) {
 						case InterceptInput.Mouse.WM_MOUSEMOVE:
@@ -242,7 +237,7 @@ namespace quick_mouse_recorder
 		public void RemovePlayList()
 		{
 			NeedSave = true;
-			InterceptInput.IsPausedKey = true;
+			InterceptInput.EnableKeyInput = false;
 			var idx = SelectedIndexPlayName;
 			var result = MessageBox.Show(Application.Current.MainWindow, $"Are you sure remove a \"{ListPlayListNames[idx]}\"", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question);
 			if (result == MessageBoxResult.OK) {
@@ -250,13 +245,13 @@ namespace quick_mouse_recorder
 				ListPlayListNames.RemoveAt(idx);
 				ListCurrentSelectedCommands.Clear();
 			}
-			InterceptInput.IsPausedKey = false;
+			InterceptInput.EnableKeyInput = true;
 		}
 
 		public void RenamePlayList()
 		{
 			NeedSave = true;
-			InterceptInput.IsPausedKey = true;
+			InterceptInput.EnableKeyInput = false;
 			var idx = SelectedIndexPlayName;
 			var dialogue = new DialogueRename();
 			dialogue.textBox.Text = ListPlayListNames[idx];
@@ -267,20 +262,20 @@ namespace quick_mouse_recorder
 				Config.Instance.PlayList[idx].Name = new_name;
 			}
 			SelectedIndexPlayName = idx;
-			InterceptInput.IsPausedKey = false;
+			InterceptInput.EnableKeyInput = true;
 		}
 
 		void OnPreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
 		{
 			++_forceDisableCount;
-			InterceptInput.IsPausedKey = true;
+			InterceptInput.EnableKeyInput = false;
 		}
 
 		void OnPreviewLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
 		{
 			--_forceDisableCount;
 			if (_forceDisableCount == 0) {
-				InterceptInput.IsPausedKey = false;
+				InterceptInput.EnableKeyInput = true;
 			}
 		}
 

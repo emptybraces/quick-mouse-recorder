@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
@@ -18,6 +19,8 @@ namespace quick_mouse_recorder
 		InterceptInput _interceptInput;
 		long _currentRecTime;
 
+		CancellationTokenSource _cts;
+
 		public MainWindow()
 		{
 			InitializeComponent();
@@ -30,16 +33,55 @@ namespace quick_mouse_recorder
 			_sbBlink = (Storyboard)FindResource("Blink");
 			_interceptInput = new InterceptInput();
 			_interceptInput.AddEvent(HookMouse);
-			InterceptInput.IsPausedMouse = true;
 			_interceptInput.AddEvent(HookKey);
-			//KeyboardHook.AddEvent(hookKeyboardTest);
-			//KeyboardHook.Start();
 			VM.OnFinishCommand += () => {
 				_sbBlink.Stop(button_play);
 				button_play.Content = "開始";
 			};
 			VM.Init();
 			xNameSliderCaptureIval.Value = Config.Instance.CaptureInterval;
+
+			void HookMouse(uint mouseId, InterceptInput.Mouse.HookData data)
+			{
+				// 移動のみ一定時間のインターバルを持たせる
+				if (mouseId == InterceptInput.Mouse.WM_MOUSEMOVE && _timer.ElapsedMilliseconds < xNameSliderCaptureIval.Value * 1000)
+					return;
+				// アプリケーション内のイベントは無視する
+				if (Left < data.pt.x && data.pt.x <= Left + Width && Top < data.pt.y && data.pt.y < Top + Height)
+					return;
+				_currentRecTime += _timer.ElapsedMilliseconds;
+				_timer.Restart();
+				VM.AddCommand(new CommandChunk {
+					Time = (int)_currentRecTime,
+					Id = mouseId,
+					X = data.pt.x,
+					Y = data.pt.y,
+				});
+				var last_index = listViewCommand.Items.Count - 1;
+				listViewCommand.ScrollIntoView(listViewCommand.Items[last_index]);
+			}
+
+			void HookKey(uint keyId, InterceptInput.Key.HookData data)
+			{
+				if (!VM.EnableHotKey)
+					return;
+				if (keyId != InterceptInput.Key.WM_KEYDOWN)
+					return;
+				var wpfkey = KeyInterop.KeyFromVirtualKey((int)data.vkCode);
+				// escape key
+				if (wpfkey == Key.Escape) {
+					StopRecording();
+					StopCommand();
+				}
+				// space key
+				else if (wpfkey == Key.Space) {
+					StartCommand();
+				}
+				// enter key
+				else if (wpfkey == Key.Return) {
+					SwitchRecording();
+				}
+			}
 		}
 
 		private void window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -70,7 +112,7 @@ namespace quick_mouse_recorder
 
 		private void Button_play_Click(object sender, RoutedEventArgs e)
 		{
-			SwitchCommand();
+			StartCommand();
 		}
 		private void Button_rec_Click(object sender, RoutedEventArgs e)
 		{
@@ -101,48 +143,6 @@ namespace quick_mouse_recorder
 			cn.log(listViewCommand.SelectedIndex);
 		}
 
-		void HookMouse(uint mouseId, InterceptInput.Mouse.HookData data)
-		{
-			// 移動のみ一定時間のインターバルを持たせる
-			if (mouseId == InterceptInput.Mouse.WM_MOUSEMOVE && _timer.ElapsedMilliseconds < xNameSliderCaptureIval.Value * 1000)
-				return;
-			// アプリケーション内のイベントは無視する
-			if (Left < data.pt.x && data.pt.x <= Left + Width && Top < data.pt.y && data.pt.y < Top + Height)
-				return;
-			_currentRecTime += _timer.ElapsedMilliseconds;
-			_timer.Restart();
-			VM.AddCommand(new CommandChunk {
-				Time = (int)_currentRecTime,
-				Id = mouseId,
-				X = data.pt.x,
-				Y = data.pt.y,
-			});
-			var last_index = listViewCommand.Items.Count - 1;
-			listViewCommand.ScrollIntoView(listViewCommand.Items[last_index]);
-		}
-
-		void HookKey(uint keyId, InterceptInput.Key.HookData data)
-		{
-			if (!VM.EnableHotKey)
-				return;
-			if (keyId != InterceptInput.Key.WM_KEYDOWN)
-				return;
-			var wpfkey = KeyInterop.KeyFromVirtualKey((int)data.vkCode);
-			// escape key
-			if (wpfkey == Key.Escape) {
-				StopRecording();
-				StopCommand();
-			}
-			// space key
-			else if (wpfkey == Key.Space) {
-				SwitchCommand();
-			}
-			// enter key
-			else if (wpfkey == Key.Return) {
-				SwitchRecording();
-			}
-		}
-
 		float Lerp(float f1, float f2, float by)
 		{
 			return f1 + (f2 - f1) * by;
@@ -165,7 +165,7 @@ namespace quick_mouse_recorder
 			_timer.Restart();
 			_sbBlink.Begin(button_rec, true);
 			button_rec.Content = "録画中...";
-			InterceptInput.IsPausedMouse = false;
+			InterceptInput.EnableMouseInput = true;
 			VM.StartRecording();
 		}
 
@@ -174,31 +174,29 @@ namespace quick_mouse_recorder
 			_currentRecTime = 0;
 			_sbBlink.Stop(button_rec);
 			button_rec.Content = "録画";
-			InterceptInput.IsPausedMouse = true;
+			InterceptInput.EnableMouseInput = false;
 			VM.StopRecodring(xnListBoxPlayList.SelectedIndex);
-		}
-
-		void SwitchCommand()
-		{
-			if (VM.IsRecording)
-				return;
-			if (VM.IsPlaying)
-				StopCommand();
-			else
-				StartCommand();
 		}
 
 		void StartCommand()
 		{
-			if (VM.IsRecording)
+			if (VM.IsRecording) {
+				Debug.WriteLine("録画中に再生することはできません。");
 				return;
+			}
+			if (VM.IsPlaying) {
+				Debug.WriteLine("既に再生中です。");
+				return;
+			}
 			_sbBlink.Begin(button_play, true);
 			button_play.Content = "開始中...";
-			_ = VM.StartCommand();
+			_cts = new CancellationTokenSource();
+			_ = VM.StartCommand(_cts.Token);
 		}
 
 		void StopCommand()
 		{
+			_cts?.Cancel();
 			_sbBlink.Stop(button_play);
 			button_play.Content = "開始";
 			VM.StopCommand();
