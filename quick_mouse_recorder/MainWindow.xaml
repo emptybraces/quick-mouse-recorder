@@ -4,9 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:quick_mouse_recorder"
-        xmlns:System="clr-namespace:System;assembly=mscorlib" xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" x:Name="window" x:Class="quick_mouse_recorder.MainWindow"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" x:Name="window" x:Class="quick_mouse_recorder.MainWindow"
         mc:Ignorable="d"
-        Title="quick_mouse_recorder [v1.0]" Height="438" Width="464" ResizeMode="CanResizeWithGrip" Background="White" Foreground="Black" Topmost="True" Icon="icon.png" MouseEnter="Window_MouseEnter" MouseLeave="Window_MouseLeave" Loaded="Window_Loaded" SourceInitialized="Window_SourceInitialized" Closing="window_Closing">
+        Title="quick_mouse_recorder [v1.0]" Height="600" Width="800" Background="White" Foreground="Black" Topmost="True" Icon="icon.png" MouseEnter="Window_MouseEnter" MouseLeave="Window_MouseLeave" Loaded="Window_Loaded" SourceInitialized="Window_SourceInitialized" Closing="window_Closing">
     <Window.Resources>
         <!--<Style TargetType="{x:Type Button}">
             <Setter Property="Margin" Value="0,10,10,10"/>
@@ -33,17 +33,30 @@
     </Window.DataContext>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="43*"/>
-            <ColumnDefinition Width="71*"/>
+            <ColumnDefinition Width="136*"/>
+            <ColumnDefinition Width="133"/>
+            <ColumnDefinition Width="187*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="261*"/>
-            <RowDefinition Height="50*"/>
-            <RowDefinition Height="96*"/>
+            <RowDefinition Height="100*"/>
+            <RowDefinition Height="80"/>
+            <RowDefinition Height="40*"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row ="0" Grid.Column="0">
-            <TextBlock Text="Play List" Width="100" HorizontalAlignment="Left" FontWeight="Bold"/>
-            <ListBox x:Name="xnListBoxPlayList" VerticalAlignment="Top" Height="240" SelectedIndex="{Binding SelectedIndexPlayName, Mode=TwoWay}" ItemsSource="{Binding ListPlayListNames}" IsEnabled="{Binding EnableFileList.Value}">
+        <Grid.Resources>
+            <Style x:Key="Header" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+            </Style>
+        </Grid.Resources>
+        <!--Panel of PlayList-->
+        <Grid Grid.Row ="0" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Play List" Style="{StaticResource Header}"/>
+            <ListBox x:Name="xnListBoxPlayList" Height="{Binding ElementName=LayoutRoot, Path=ActualHeight}" SelectedIndex="{Binding SelectedIndexPlayName, Mode=TwoWay}" ItemsSource="{Binding ListPlayListNames}" IsEnabled="{Binding EnableFileList.Value}" Grid.Row="1">
                 <ListBox.InputBindings>
                     <KeyBinding Gesture="Del" Command="{Binding ListboxKeyBindRemoveSelectedItem}"/>
                     <KeyBinding Gesture="F2" Command="{Binding ListboxKeyBindRenameSelectedItem}"/>
@@ -65,10 +78,55 @@
                     </Style>
                 </ListBox.Resources>
             </ListBox>
+        </Grid>
+        
+        <!--Panel of Play and Rec properties-->
+        <StackPanel Orientation="Vertical" Grid.Column="1" IsEnabled="{Binding EnableSettings.Value}">
+            <StackPanel.Resources>
+                <Style TargetType="TextBlock" x:Key="PropertyName">
+                    <Setter Property="Width" Value="80"/>
+                    <Setter Property="FontSize" Value="10"/>
+                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                    <Setter Property="VerticalAlignment" Value="Center"/>
+                    <Setter Property="TextAlignment" Value="Right"/>
+                </Style>
+            </StackPanel.Resources>
+            
+            <!--Rec Options-->
+            <TextBlock Text="REC Options" Style="{StaticResource Header}"/>
+            <Separator/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Capture Interval: " Style="{StaticResource PropertyName}"/>
+                <xctk:SingleUpDown x:Name="xnSingleUpDownCaptureIntvl" Maximum="1" Minimum="0.1" Value="{Binding CaptureInterval.Value, Mode=TwoWay}" Increment="0.1" Text="0.1" FormatString="f1" HorizontalAlignment="Right" />
+                <!--<TextBlock Text="{Binding Value, ElementName=slider_captureIval, StringFormat=REC Interval: \{0:f2\}}" TextAlignment="Right" />-->
+                <!--<Slider x:Name="xNameSliderCaptureIval" TickPlacement="TopLeft" Width="182" Maximum="1" Minimum="0.01" SmallChange="0.01" LargeChange="0.1" TickFrequency="0.1" Value="{Binding CaptureInterval.Value, Mode=TwoWay}" />-->
+            </StackPanel>
+
+            <!--Play Options-->
+            <TextBlock Text="Play Options" Style="{StaticResource Header}" Margin="0,50,0,0"/>
+            <Separator/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Repeat Count: " Style="{StaticResource PropertyName}"/>
+                <xctk:IntegerUpDown Maximum="99" Minimum="0" Value="{Binding RepeatCount.Value, Mode=TwoWay}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Interval: " Style="{StaticResource PropertyName}" />
+                <xctk:SingleUpDown Maximum="999" Minimum="0" Value="{Binding RepeatInterval.Value, Mode=TwoWay}" IsEnabled="{Binding RepeatIntervalEnabled}" Increment="0.5" />
+            </StackPanel>
+            <!--<StackPanel Orientation="Horizontal">
+                <TextBlock Text="Use Hotkey: " VerticalAlignment="Center" FontSize="10" HorizontalAlignment="Center" TextAlignment="Right"/>
+                <CheckBox x:Name="xNameCheckBoxHotKey"  DataContext="{Binding VM_ContentHotkey.Value}" Content="{Binding DisplayState.Value}" IsChecked="{Binding IsChecked.Value}" Foreground="{Binding ContentForegroundBrush.Value}"/>
+            </StackPanel>-->
         </StackPanel>
-        <StackPanel x:Name="stackPanel_r0c1" Grid.Column="1" VerticalAlignment="Top" Height="256">
-            <TextBlock Text="Command List" HorizontalAlignment="Left" FontWeight="Bold"/>
-            <ListView x:Name="listViewCommand" ItemsSource="{Binding ListCurrentSelectedCommands}" Height="240" SelectedIndex="{Binding SelectedIndexListCommand, Mode=TwoWay}" local:BehaviorScrollToSelected.DoScroll ="{Binding SelectedValue, RelativeSource={RelativeSource Self}}" IsEnabled="{Binding EnableCommandList.Value}">
+        
+        <!--Panel of CommandList-->
+        <Grid x:Name="xNameStackPanelCommandList" Grid.Column="2" VerticalAlignment="Top">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Selected PlayList's Command List" Style="{StaticResource Header}" />
+            <ListView x:Name="listViewCommand" Height="{Binding ElementName=LayoutRoot, Path=ActualHeight}" ItemsSource="{Binding ListCurrentSelectedCommands}" SelectedIndex="{Binding SelectedIndexListCommand, Mode=TwoWay}" local:BehaviorScrollToSelected.DoScroll ="{Binding SelectedValue, RelativeSource={RelativeSource Self}}" IsEnabled="{Binding EnableCommandList.Value}" Grid.Row="1">
                 <ListView.Resources>
                     <ContextMenu x:Key="ListViewItemResources">
                         <MenuItem Header="Delete" Click="ListViewCommandItemDelete_Context"/>
@@ -80,38 +138,21 @@
                 </ListView.Resources>
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Time}" Width="80"/>
-                        <GridViewColumn Header="Stroke" DisplayMemberBinding="{Binding Id}" Width="80"/>
+                        <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Time}" Width="60"/>
+                        <GridViewColumn Header="Cmd" DisplayMemberBinding="{Binding Id}" Width="60"/>
                         <GridViewColumn Header="X" DisplayMemberBinding="{Binding X}" Width="40"/>
                         <GridViewColumn Header="Y" DisplayMemberBinding="{Binding Y}" Width="40"/>
                     </GridView>
                 </ListView.View>
             </ListView>
+        </Grid>
+        <!--Panel of state-->
+        <StackPanel Background="#FFB2B2B2" Grid.Row="1" Grid.ColumnSpan="3">
+
         </StackPanel>
-        <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Center" Grid.Row="1" VerticalAlignment="Top" Margin="57,0" Height="50" Width="170">
-            <Button x:Name="button_play" Content="PLAY"  Width="75" Click="Button_play_Click" Focusable="False" IsEnabled="{Binding EnablePlayButton}"/>
-            <Button x:Name="button_rec" Content="REC" Width="75" Click="Button_rec_Click" Focusable="False" IsEnabled="{Binding EnableRecButton.Value}" />
-        </StackPanel>
-        <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="2" IsEnabled="{Binding EnableSettings.Value}">
-            <StackPanel.Resources>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Width" Value="100"/>
-                </Style>
-            </StackPanel.Resources>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="{Binding Value, ElementName=slider_captureIval, StringFormat=REC Interval: \{0:f2\}}" TextAlignment="Right" VerticalAlignment="Center" FontSize="10"/>
-                <Slider x:Name="xNameSliderCaptureIval" TickPlacement="TopLeft" Width="182" Maximum="1" Minimum="0.01" SmallChange="0.01" LargeChange="0.1" TickFrequency="0.1" Value="{Binding CaptureInterval.Value, Mode=TwoWay}" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Repeat Count: " VerticalAlignment="Center" FontSize="10" HorizontalAlignment="Center" TextAlignment="Right"/>
-                <xctk:IntegerUpDown Maximum="99" Minimum="0" Value="{Binding RepeatCount.Value, Mode=TwoWay}" />
-                <TextBlock Text="Interval: " VerticalAlignment="Center" FontSize="10" Width="Auto"/>
-                <xctk:SingleUpDown Maximum="999" Minimum="0" Value="{Binding RepeatInterval.Value, Mode=TwoWay}" IsEnabled="{Binding RepeatIntervalEnabled}" Increment="0.5" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Use Hotkey: " VerticalAlignment="Center" FontSize="10" HorizontalAlignment="Center" TextAlignment="Right"/>
-                <CheckBox x:Name="xNameCheckBoxHotKey"  DataContext="{Binding VM_ContentHotkey.Value}" Content="{Binding DisplayState.Value}" IsChecked="{Binding IsChecked.Value}" Foreground="{Binding ContentForegroundBrush.Value}"/>
-            </StackPanel>
-        </StackPanel>
+        <!--Panel of log-->
+        <ScrollViewer Grid.ColumnSpan="3" Grid.Row="2" Background="#FF424242" BorderBrush="#FF00FF0C" BorderThickness="1" Foreground="#FFDADADA" >
+            <TextBlock x:Name="xNameTextBlockLog" Text="This is log."/>
+        </ScrollViewer>
     </Grid>
 </Window>

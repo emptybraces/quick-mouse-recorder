@@ -35,16 +35,16 @@ namespace quick_mouse_recorder
 			_interceptInput.AddEvent(HookMouse);
 			_interceptInput.AddEvent(HookKey);
 			VM.OnFinishCommand += () => {
-				_sbBlink.Stop(button_play);
-				button_play.Content = "開始";
+				//_sbBlink.Stop(button_play);
+				//button_play.Content = "開始";
 			};
 			VM.Init();
-			xNameSliderCaptureIval.Value = Config.Instance.CaptureInterval;
+			xnSingleUpDownCaptureIntvl.Value = Config.Instance.CaptureInterval;
 
 			void HookMouse(uint mouseId, InterceptInput.Mouse.HookData data)
 			{
 				// 移動のみ一定時間のインターバルを持たせる
-				if (mouseId == InterceptInput.Mouse.WM_MOUSEMOVE && _timer.ElapsedMilliseconds < xNameSliderCaptureIval.Value * 1000)
+				if (mouseId == InterceptInput.Mouse.WM_MOUSEMOVE && _timer.ElapsedMilliseconds < xnSingleUpDownCaptureIntvl.Value * 1000)
 					return;
 				// アプリケーション内のイベントは無視する
 				if (Left < data.pt.x && data.pt.x <= Left + Width && Top < data.pt.y && data.pt.y < Top + Height)
@@ -81,6 +81,8 @@ namespace quick_mouse_recorder
 				else if (wpfkey == Key.Return) {
 					SwitchRecording();
 				}
+				else if (wpfkey == Key.A) {
+				}
 			}
 		}
 
@@ -100,23 +102,14 @@ namespace quick_mouse_recorder
 		}
 		private void Window_MouseEnter(object sender, MouseEventArgs e)
 		{
-			var context = (VM_ContentHotKey)xNameCheckBoxHotKey.DataContext;
-			context.OnMouseEnter(xNameCheckBoxHotKey);
+			//var context = (VM_ContentHotKey)xNameCheckBoxHotKey.DataContext;
+			//context.OnMouseEnter(xNameCheckBoxHotKey);
 		}
 
 		private void Window_MouseLeave(object sender, MouseEventArgs e)
 		{
-			var context = (VM_ContentHotKey)xNameCheckBoxHotKey.DataContext;
-			context.OnMouseLeave(xNameCheckBoxHotKey);
-		}
-
-		private void Button_play_Click(object sender, RoutedEventArgs e)
-		{
-			StartCommand();
-		}
-		private void Button_rec_Click(object sender, RoutedEventArgs e)
-		{
-			SwitchRecording();
+			//var context = (VM_ContentHotKey)xNameCheckBoxHotKey.DataContext;
+			//context.OnMouseLeave(xNameCheckBoxHotKey);
 		}
 
 		private void ListboxPlayListAdd_Context(object sender, RoutedEventArgs e)
@@ -163,8 +156,8 @@ namespace quick_mouse_recorder
 		void StartRecording()
 		{
 			_timer.Restart();
-			_sbBlink.Begin(button_rec, true);
-			button_rec.Content = "録画中...";
+			//_sbBlink.Begin(button_rec, true);
+			//button_rec.Content = "録画中...";
 			InterceptInput.EnableMouseInput = true;
 			VM.StartRecording();
 		}
@@ -172,8 +165,8 @@ namespace quick_mouse_recorder
 		void StopRecording()
 		{
 			_currentRecTime = 0;
-			_sbBlink.Stop(button_rec);
-			button_rec.Content = "録画";
+			//_sbBlink.Stop(button_rec);
+			//button_rec.Content = "録画";
 			InterceptInput.EnableMouseInput = false;
 			VM.StopRecodring(xnListBoxPlayList.SelectedIndex);
 		}
@@ -188,8 +181,8 @@ namespace quick_mouse_recorder
 				Debug.WriteLine("既に再生中です。");
 				return;
 			}
-			_sbBlink.Begin(button_play, true);
-			button_play.Content = "開始中...";
+			//_sbBlink.Begin(button_play, true);
+			//button_play.Content = "開始中...";
 			_cts = new CancellationTokenSource();
 			_ = VM.StartCommand(_cts.Token);
 		}
@@ -197,8 +190,8 @@ namespace quick_mouse_recorder
 		void StopCommand()
 		{
 			_cts?.Cancel();
-			_sbBlink.Stop(button_play);
-			button_play.Content = "開始";
+			//_sbBlink.Stop(button_play);
+			//button_play.Content = "開始";
 			VM.StopCommand();
 		}
 
