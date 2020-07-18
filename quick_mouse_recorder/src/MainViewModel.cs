@@ -19,7 +19,7 @@ namespace quick_mouse_recorder
 		public RelayCommand ListboxKeyBindRemoveSelectedItem { get; private set; }
 		public RelayCommand ListboxKeyBindRenameSelectedItem { get; private set; }
 		public bool IsRecording { get; private set; }
-		public bool IsPlaying { get; private set; }
+		public bool IsPlaying => _cts != null;
 		public bool NeedSave { get; private set; }
 		int _selectedIndexListName;
 		public int SelectedIndexPlayName {
@@ -50,9 +50,6 @@ namespace quick_mouse_recorder
 		public ReactiveProperty<int> RepeatCount { get; } = new ReactiveProperty<int>(1);
 		public ReactiveProperty<float> RepeatInterval { get; } = new ReactiveProperty<float>(0);
 		public bool RepeatIntervalEnabled => 1 < RepeatCount.Value;
-
-		public ReactiveProperty<VM_ContentHotKey> VM_ContentHotkey { get; } = new ReactiveProperty<VM_ContentHotKey>(new VM_ContentHotKey());
-		public bool EnableHotKey => ListCurrentSelectedCommands.Any() && VM_ContentHotkey.Value.EnableHotKey;
 
 		public ReactiveProperty<bool> EnableFileList { get; } = new ReactiveProperty<bool>(true);
 		public ReactiveProperty<bool> EnableCommandList { get; } = new ReactiveProperty<bool>(true);
@@ -92,7 +89,6 @@ namespace quick_mouse_recorder
 						ListCurrentSelectedCommands.Add(jj);
 				}
 			}
-			VM_ContentHotkey.Value.Init();
 			NotifyPropertyChanged(nameof(EnablePlayButton));
 			RepeatCount.Subscribe(_ => {
 				NotifyPropertyChanged("RepeatIntervalEnabled");
@@ -104,12 +100,11 @@ namespace quick_mouse_recorder
 		public void SaveConfig()
 		{
 			Config.Instance.CaptureInterval = CaptureInterval.Value;
-			Config.Instance.EnableHotKey = VM_ContentHotkey.Value.IsChecked.Value;
 			//Config.Instance.RepeatInterval = RepeatInterval.Value;
 			Config.WriteConfig(Config.Instance);
 		}
 
-		public async Task StartCommand(CancellationToken cancelToken)
+		public async Task StartCommand()
 		{
 			_cts?.Cancel();
 			_cts = new CancellationTokenSource();
@@ -118,7 +113,6 @@ namespace quick_mouse_recorder
 			EnableFileList.Value = false;
 			EnableSettings.Value = false;
 			EnableRecButton.Value = false;
-			IsPlaying = true;
 			//var oldx = 0;
 			//var oldy = 0;
 			int try_total = RepeatCount.Value;
@@ -158,12 +152,13 @@ namespace quick_mouse_recorder
 		{
 			if (!IsPlaying)
 				return;
+			_cts?.Cancel();
+			_cts = null;
 			EnableCommandList.Value = true;
 			EnableFileList.Value = true;
 			EnableSettings.Value = true;
 			EnableRecButton.Value = true;
 			//sbBlink.Stop(button_play);
-			IsPlaying = false;
 			//button_play.Content = "開始";
 			cn.log("再生終了");
 			OnFinishCommand();
@@ -269,6 +264,7 @@ namespace quick_mouse_recorder
 		{
 			++_forceDisableCount;
 			InterceptInput.EnableKeyInput = false;
+			cn.log(_forceDisableCount);
 		}
 
 		void OnPreviewLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
@@ -277,6 +273,7 @@ namespace quick_mouse_recorder
 			if (_forceDisableCount == 0) {
 				InterceptInput.EnableKeyInput = true;
 			}
+			cn.log(_forceDisableCount);
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;

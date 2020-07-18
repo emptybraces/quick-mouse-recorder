@@ -31,7 +31,6 @@ namespace quick_mouse_recorder
 		public List<PlayData> PlayList { get; set; } = new List<PlayData>();
 		public float CaptureInterval { get; set; } = 0.01f;
 		//public float RepeatInterval { get; set; }
-		public bool EnableHotKey { get; set; }
 
 		static Config _config;
 		public static Config Instance {

@@ -19,7 +19,7 @@ namespace quick_mouse_recorder
 		InterceptInput _interceptInput;
 		long _currentRecTime;
 
-		CancellationTokenSource _cts;
+		CancellationTokenSource _cts = null;
 
 		public MainWindow()
 		{
@@ -63,8 +63,6 @@ namespace quick_mouse_recorder
 
 			void HookKey(uint keyId, InterceptInput.Key.HookData data)
 			{
-				if (!VM.EnableHotKey)
-					return;
 				if (keyId != InterceptInput.Key.WM_KEYDOWN)
 					return;
 				var wpfkey = KeyInterop.KeyFromVirtualKey((int)data.vkCode);
@@ -73,15 +71,14 @@ namespace quick_mouse_recorder
 					StopRecording();
 					StopCommand();
 				}
-				// space key
-				else if (wpfkey == Key.Space) {
+				// startcommand
+				else if (wpfkey == Key.P) {
 					StartCommand();
 				}
-				// enter key
-				else if (wpfkey == Key.Return) {
-					SwitchRecording();
-				}
-				else if (wpfkey == Key.A) {
+				// startrec
+				else if (wpfkey == Key.R) {
+					cn.log();
+					StartRecording();
 				}
 			}
 		}
@@ -141,20 +138,20 @@ namespace quick_mouse_recorder
 			return f1 + (f2 - f1) * by;
 		}
 
-		void SwitchRecording()
-		{
-			if (VM.IsPlaying)
-				return;
-			if (xnListBoxPlayList.SelectedIndex < 0)
-				return;
-			if (VM.IsRecording)
-				StopRecording();
-			else
-				StartRecording();
-		}
-
 		void StartRecording()
 		{
+			if (VM.IsRecording) {
+				Debug.WriteLine("既に録画中です。");
+				return;
+			}
+			if (VM.IsPlaying) {
+				Debug.WriteLine("再生中に録画することはできません。");
+				return;
+			}
+			if (xnListBoxPlayList.SelectedIndex < 0) {
+				Debug.WriteLine("録画するプレイリストを選択してください。");
+				return;
+			}
 			_timer.Restart();
 			//_sbBlink.Begin(button_rec, true);
 			//button_rec.Content = "録画中...";
@@ -183,8 +180,7 @@ namespace quick_mouse_recorder
 			}
 			//_sbBlink.Begin(button_play, true);
 			//button_play.Content = "開始中...";
-			_cts = new CancellationTokenSource();
-			_ = VM.StartCommand(_cts.Token);
+			_ = VM.StartCommand();
 		}
 
 		void StopCommand()

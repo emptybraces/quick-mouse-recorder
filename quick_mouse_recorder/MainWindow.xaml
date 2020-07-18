@@ -4,7 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:quick_mouse_recorder"
-        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" x:Name="window" x:Class="quick_mouse_recorder.MainWindow"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        x:Name="window"
+        x:Class="quick_mouse_recorder.MainWindow"
         mc:Ignorable="d"
         Title="quick_mouse_recorder [v1.0]" Height="600" Width="800" Background="White" Foreground="Black" Topmost="True" Icon="icon.png" MouseEnter="Window_MouseEnter" MouseLeave="Window_MouseLeave" Loaded="Window_Loaded" SourceInitialized="Window_SourceInitialized" Closing="window_Closing">
     <Window.Resources>
@@ -97,21 +99,20 @@
             <Separator/>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Capture Interval: " Style="{StaticResource PropertyName}"/>
-                <xctk:SingleUpDown x:Name="xnSingleUpDownCaptureIntvl" Maximum="1" Minimum="0.1" Value="{Binding CaptureInterval.Value, Mode=TwoWay}" Increment="0.1" Text="0.1" FormatString="f1" HorizontalAlignment="Right" />
+                <xctk:SingleUpDown x:Name="xnSingleUpDownCaptureIntvl" Maximum="1" Minimum="0.1" Value="{Binding CaptureInterval.Value, Mode=TwoWay}" Increment="0.1" Text="0.1" FormatString="f1" HorizontalAlignment="Right" Focusable="False" AllowSpin="False" />
                 <!--<TextBlock Text="{Binding Value, ElementName=slider_captureIval, StringFormat=REC Interval: \{0:f2\}}" TextAlignment="Right" />-->
                 <!--<Slider x:Name="xNameSliderCaptureIval" TickPlacement="TopLeft" Width="182" Maximum="1" Minimum="0.01" SmallChange="0.01" LargeChange="0.1" TickFrequency="0.1" Value="{Binding CaptureInterval.Value, Mode=TwoWay}" />-->
             </StackPanel>
-
             <!--Play Options-->
             <TextBlock Text="Play Options" Style="{StaticResource Header}" Margin="0,50,0,0"/>
             <Separator/>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Repeat Count: " Style="{StaticResource PropertyName}"/>
-                <xctk:IntegerUpDown Maximum="99" Minimum="0" Value="{Binding RepeatCount.Value, Mode=TwoWay}" />
+                <xctk:IntegerUpDown Maximum="99" Minimum="0" Value="{Binding RepeatCount.Value, Mode=TwoWay}" Focusable="False" MouseWheelActiveOnFocus="False" AllowSpin="False" />
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Interval: " Style="{StaticResource PropertyName}" />
-                <xctk:SingleUpDown Maximum="999" Minimum="0" Value="{Binding RepeatInterval.Value, Mode=TwoWay}" IsEnabled="{Binding RepeatIntervalEnabled}" Increment="0.5" />
+                <xctk:SingleUpDown Maximum="999" Minimum="0" Value="{Binding RepeatInterval.Value, Mode=TwoWay}" IsEnabled="{Binding RepeatIntervalEnabled}" Increment="0.5" Focusable="False" AllowSpin="False" />
             </StackPanel>
             <!--<StackPanel Orientation="Horizontal">
                 <TextBlock Text="Use Hotkey: " VerticalAlignment="Center" FontSize="10" HorizontalAlignment="Center" TextAlignment="Right"/>

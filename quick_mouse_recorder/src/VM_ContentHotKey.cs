@@ -1,5 +1,4 @@
 ﻿using Reactive.Bindings;
-using System;
 using System.ComponentModel;
 using System.Windows.Media;
 
@@ -22,11 +21,11 @@ namespace quick_mouse_recorder
 
 		public void Init()
 		{
-			IsChecked.Value = Config.Instance.EnableHotKey;
-			IsChecked.Subscribe(e => {
-				Refresh();
-				Config.Instance.EnableHotKey = e;
-			});
+			//IsChecked.Value = Config.Instance.EnableHotKey;
+			//IsChecked.Subscribe(e => {
+			//	Refresh();
+			//	Config.Instance.EnableHotKey = e;
+			//});
 		}
 
 		public void OnMouseEnter(object sender)
