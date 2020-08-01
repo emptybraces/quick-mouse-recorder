@@ -88,7 +88,7 @@ namespace quick_mouse_recorder
 			_interceptInput.Stop();
 			// 設定保存
 			if (VM.NeedSave) {
-				var result = MessageBox.Show("Do you want to save the updated data?", "Confirm", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+				var result = MessageBox.Show("Do you want to save the last changed?", "Confirm", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 				if (result == MessageBoxResult.Yes) {
 					VM.SaveConfig();
 				}

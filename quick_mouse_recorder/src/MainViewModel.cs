@@ -166,6 +166,7 @@ namespace quick_mouse_recorder
 
 		public void StartRecording()
 		{
+			NeedSave = true;
 			EnableCommandList.Value = false;
 			EnableFileList.Value = false;
 			EnableSettings.Value = false;
