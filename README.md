@@ -1,2 +1,2 @@
-# quick_mouse_recorder
+# quick mouse recorder
 Recording/Playback mouse behaviour
